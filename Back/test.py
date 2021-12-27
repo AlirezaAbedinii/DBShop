@@ -1,14 +1,18 @@
 import psycopg2
-
+import json
 
 # functions
 def connect_to_db(username, password):
     try:
         conn = psycopg2.connect(
             host="localhost",
-            database="OnlineShop",
+            database="testshop",
             user=username,
             password=password)
+
+        cursor = conn.cursor()
+        return cursor
+
     except:
         print('wrong username or password')
 
@@ -18,10 +22,11 @@ def enter():
     username = input()
     print('enter password')
     password = input()
-    connect_to_db(username, password)
+    cursor = connect_to_db(username, password)
+    actions(cursor)
 
 
-def actions():
+def actions(cursor):
     print('01: list products')
     print('02: buy products')
     print('03: modify products')
@@ -38,12 +43,14 @@ def actions():
     print('14: exit')
 
     command_id = input()
-    run_command(command_id)
+    run_command(cursor, command_id)
 
 
-def run_command(cid):
+def run_command(cursor, cid):
     if cid == '1':
-        print('1')
+        cursor.callproc('list_products')
+        products = cursor.fetchall()
+        print(products)
 
 
 # init
