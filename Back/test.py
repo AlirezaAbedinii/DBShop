@@ -41,8 +41,8 @@ def enter():
 
 
 def actions(cursor):
-    command_id = 0
-    while command_id != '16':
+    exit_time = 'n'
+    while exit_time == 'n':
         print('01: list products') #func, input shop id D
         print('02: buy basket') #... H
         print('03: modify products')  #procedure, input pid, input all fields excpet num_sold M
@@ -62,14 +62,31 @@ def actions(cursor):
 
         command_id = input()
         run_command(cursor, command_id)
-
+        print('Wanna quit? y/n')
+        exit_time = input()
     print('Good Bye')
+
+
+def list_products(cursor):
+    print('Enter shop id:')
+    shop_id = input()
+    cursor.callproc('list_products', (user_id, int(shop_id)))
+    products = cursor.fetchall()
+    print(products)
+
+
+def list_shops(cursor):
+    cursor.callproc('list_shops', (user_id,))
+    shops = cursor.fetchall()
+    print(shops)
+
 
 def run_command(cursor, cid):
     if cid == '1':
-        cursor.callproc('list_products')
-        products = cursor.fetchall()
-        print(products)
+        list_products(cursor)
+
+    elif cid == '13':
+        list_shops(cursor)
 
 
 
