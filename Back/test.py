@@ -27,20 +27,23 @@ def enter():
 
 
 def actions(cursor):
-    print('01: list products')
-    print('02: buy products')
-    print('03: modify products')
-    print('04: get reports')
-    print('05: remove products')
-    print('06: add products')
-    print('07: view shop basket')
-    print('08: charge')
-    print('09: view receipts')
-    print('10: view categories')
-    print('11: modify categories')
-    print('12: add categories')
-    print('13: remove users')
-    print('14: exit')
+
+    print('01: list products') #func, input shop id D
+    print('02: buy basket') #... H
+    print('03: modify products')  #procedure, input pid, input all fields excpet num_sold M
+    print('04: get reports')    #... H
+    print('05: remove products')    #proc, pid, trigger M
+    print('06: add products')   #proc, input fields of products E
+    print('07: view shop basket')   #func E
+    print('08: charge') #proc, input target uid, amount E
+    print('09: view receipts')  #func E
+    print('10: view categories')    #func E
+    print('11: add categories') #proc, name E
+    print('12: remove users')   #proc, target uid, trigger M
+    print('13: list shops') #func E
+    print('14: add to basket')  #proc, pid, count M
+    print('15: clean basket')   #proc, target id E
+    # print('15: exit')
 
     command_id = input()
     run_command(cursor, command_id)
@@ -48,9 +51,12 @@ def actions(cursor):
 
 def run_command(cursor, cid):
     if cid == '1':
-        cursor.callproc('list_products')
-        products = cursor.fetchall()
-        print(products)
+        # cursor.callproc('list_products')
+        # products = cursor.fetchall()
+        # print(products)
+        #
+        cursor.execute("select current_user")
+        print(cursor.fetchall())
 
 
 # init
