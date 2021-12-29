@@ -1,5 +1,6 @@
 import psycopg2
 import json
+from tabulate import tabulate
 
 # Local variables
 user_id = -1
@@ -111,6 +112,9 @@ def run_command(cursor, cid, conn):
     elif cid == '3':
         modify_product(cursor, conn)
 
+    elif cid == '4':
+        get_reports(cursor)
+
     elif cid == '6':
         add_product(cursor, conn)
 
@@ -137,6 +141,7 @@ def run_command(cursor, cid, conn):
 
     elif cid == '15':
         clean_basket(cursor, conn)
+
 
 # current_user_id int, product_id int, new_price int, new_num_avail int,new_num_sold int, new_category varchar,
 # new_pname varchar, new_shop_id int
@@ -238,6 +243,119 @@ def view_receipts(cursor):
     receipts = cursor.fetchall()
     print(receipts)
 
+
+def get_reports(cursor):
+    print('1: Daily, monthly, and yearly sells')
+    print('2: Shop and Category overview')
+    print("3: Products' popularity in their shops")
+    print("4: Products and their categories' average prices")
+    print("5: Best customers")
+    print("6: Customers' favourite categories")
+    cmnd = input()
+    if cmnd == '1':
+        date_related_report(cursor)
+    elif cmnd == '2':
+        shop_and_category_overview_report(cursor)
+    elif cmnd == '3':
+        products_popularity_report(cursor)
+    elif cmnd == '4':
+        products_and_categories_average_prices_report(cursor)
+    elif cmnd == '5':
+        best_customers_report(cursor)
+    elif cmnd == '6':
+        customers_favourite_categories_report(cursor)
+
+
+def date_related_report(cursor):
+    cursor.execute('''
+    select case 
+	when yyear is null then 'All years'
+	else yyear
+	end,
+	case 
+	when mmonth is null then 'All months'
+	else mmonth
+	end,
+	case 
+	when dday is null then 'All days'
+	else dday
+	end,
+	total_sell
+from (select extract(year from date)::varchar as yyear,
+	extract(month from date)::varchar as mmonth,
+	extract(day from date)::varchar as dday,
+	sum(total_price) as total_sell
+	
+	from "Reciept"
+	group by cube(yyear, mmonth, dday)
+	 ) as foo
+order by yyear, mmonth, dday;
+    ''')
+    result = cursor.fetchall()
+    print(tabulate(result, headers=[desc[0] for desc in cursor.description], tablefmt='orgtbl'))
+
+
+def shop_and_category_overview_report(cursor):
+    cursor.execute('''
+    SELECT
+case grouping(sname)
+when 0 then sname
+when 1 then 'All shops'
+end as sname,
+case grouping(category)
+when 0 then category
+when 1 then 'All categories'
+end as category,
+SUM (num_sold) as sold
+FROM "Product" left join "Shop" on shop_id = sid
+GROUP BY CUBE(sname, category)
+ORDER BY sname, category;
+    ''')
+    result = cursor.fetchall()
+    print(tabulate(result, headers=[desc[0] for desc in cursor.description], tablefmt='orgtbl'))
+
+
+def products_popularity_report(cursor):
+    cursor.execute('''
+    SELECT pname, sname, price, num_sold,
+ROW_NUMBER () OVER (
+PARTITION BY shop_id
+ORDER BY num_sold desc) as sold_rank
+FROM "Product" LEFT JOIN "Shop" on shop_id = sid;
+''')
+    result = cursor.fetchall()
+    print(tabulate(result, headers=[desc[0] for desc in cursor.description], tablefmt='orgtbl'))
+
+
+def products_and_categories_average_prices_report(cursor):
+    cursor.execute('''SELECT pname, price, category,
+AVG (price) OVER (
+PARTITION BY category
+)
+FROM "Product";''')
+    result = cursor.fetchall()
+    print(tabulate(result, headers=[desc[0] for desc in cursor.description], tablefmt='orgtbl'))
+
+
+def best_customers_report(cursor):
+    cursor.execute('''select fname, lname, bought
+from (select costumer_id as cid, sum(total_price) as bought
+from "Reciept"
+group by costumer_id
+having sum(total_price)>0) as foo inner join "User" on cid = uid;''')
+    result = cursor.fetchall()
+    print(tabulate(result, headers=[desc[0] for desc in cursor.description], tablefmt='orgtbl'))
+
+
+def customers_favourite_categories_report(cursor):
+    cursor.execute('''select fname, lname, category as favourite_category
+from  (select distinct on (cid) cid, category
+from (select costumer_id as cid, category as category, sum(purchase_num) as bought
+from "Reciept" as r inner join "Product" as p on r.pid = p.pid
+group by costumer_id, category) as foo
+order by cid, bought desc) foo2 left join "User" on cid = uid;''')
+    result = cursor.fetchall()
+    print(tabulate(result, headers=[desc[0] for desc in cursor.description], tablefmt='orgtbl'))
 
 # init
 enter()
