@@ -18,6 +18,9 @@ def connect_to_db(username, password):
 
         cursor = conn.cursor()
 
+        # user_id = username[-1]
+        # print(user_id)
+        # exit(2)
         cursor.execute('select uid from "User" where role = %s', (username,))
 
         result = cursor.fetchall()
@@ -41,6 +44,12 @@ def enter():
     actions(cursor, conn)
 
 
+def get_user_id(role):
+    role_to_id = {'userp1': 'userp111', 'userp2': 'userp222',
+                  'userp3': 'userp333', 'userp4': 'userp444', 'userp5': 'userp555'}
+    return role_to_id[role]
+
+
 def actions(cursor, conn):
     exit_time = 'n'
     while exit_time == 'n':
@@ -59,7 +68,8 @@ def actions(cursor, conn):
         print('13: list shops')  # func E
         print('14: add to basket')  # proc, pid, count M
         print('15: clean basket')  # proc, target id E
-        print('16: exit')
+        print('16: modify user')
+        print('17: modify category')
 
         command_id = input()
         run_command(cursor, command_id, conn)
@@ -102,12 +112,15 @@ def modify_product(cursor, conn):
         conn.commit()
     # print(result)
     except Exception as e:
-        print('ERROR: bad input')
+        print(e)
 
 
 def run_command(cursor, cid, conn):
     if cid == '1':
         list_products(cursor)
+
+    elif cid == '2':
+        shop(cursor, conn)
 
     elif cid == '3':
         modify_product(cursor, conn)
@@ -133,6 +146,9 @@ def run_command(cursor, cid, conn):
     elif cid == '11':
         add_category(cursor, conn)
 
+    elif cid == '12':
+        remove_user(cursor, conn)
+
     elif cid == '13':
         list_shops(cursor)
 
@@ -141,6 +157,12 @@ def run_command(cursor, cid, conn):
 
     elif cid == '15':
         clean_basket(cursor, conn)
+
+    elif cid == '16':
+        edit_lastname(cursor, conn)
+
+    elif cid == '17':
+        modify_category(cursor, conn)
 
 
 # current_user_id int, product_id int, new_price int, new_num_avail int,new_num_sold int, new_category varchar,
@@ -179,7 +201,7 @@ def charge(cursor, conn):
 
         conn.commit()
     except Exception as e:
-        print('ERROR: bad input')
+        print(e)
 
 
 def add_category(cursor, conn):
@@ -192,7 +214,7 @@ def add_category(cursor, conn):
 
         conn.commit()
     except Exception as e:
-        print('ERROR: bad input')
+        print(e)
 
 
 def add_to_basket(cursor, conn):
@@ -208,7 +230,7 @@ def add_to_basket(cursor, conn):
 
         conn.commit()
     except Exception as e:
-        print('ERROR: bad input')
+        print(e)
 
 
 def clean_basket(cursor, conn):
@@ -221,7 +243,7 @@ def clean_basket(cursor, conn):
 
         conn.commit()
     except Exception as e:
-        print('ERROR: bad input')
+        print(e)
 
 
 def view_categories(cursor):
@@ -242,6 +264,57 @@ def view_receipts(cursor):
     cursor.callproc('view_reciepts', (user_id,))
     receipts = cursor.fetchall()
     print(receipts)
+
+
+def remove_user(cursor, conn):
+    print('Enter target id')
+    tid = input()
+
+    try:
+        cursor.execute("call remove_user(%s, %s)",
+                       (int(user_id), int(tid)))
+
+        conn.commit()
+    except Exception as e:
+        print(e)
+
+
+def edit_lastname(cursor, conn):
+    print('Enter target id')
+    tid = input()
+    print('Enter new last name')
+    new_lname = input()
+    try:
+        cursor.execute("call edit_lname(%s, %s, %s)",
+                       (int(user_id), int(tid), new_lname))
+
+        conn.commit()
+    except Exception as e:
+        print(e)
+
+
+def modify_category(cursor, conn):
+    print('Enter old name')
+    old = input()
+    print('Enter new name')
+    new = input()
+    try:
+        cursor.execute("call edit_category(%s, %s, %s)",
+                       (int(user_id), old, new))
+
+        conn.commit()
+    except Exception as e:
+        print(e)
+
+
+def shop(cursor, conn):
+    try:
+        cursor.execute("call shop(%s)",
+                       (int(user_id)))
+
+        conn.commit()
+    except Exception as e:
+        print(e)
 
 
 def get_reports(cursor):
@@ -356,6 +429,7 @@ group by costumer_id, category) as foo
 order by cid, bought desc) foo2 left join "User" on cid = uid;''')
     result = cursor.fetchall()
     print(tabulate(result, headers=[desc[0] for desc in cursor.description], tablefmt='orgtbl'))
+
 
 # init
 enter()
