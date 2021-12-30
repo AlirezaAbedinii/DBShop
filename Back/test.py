@@ -256,8 +256,9 @@ def view_basket(cursor):
     print('Enter target id')
     target_id = input()
     cursor.callproc('view_basket', (user_id, target_id,))
-    baskets = cursor.fetchall()
-    print(baskets)
+    result = cursor.fetchall()
+    # print(tabulate(result, headers=[desc[0] for desc in cursor.description], tablefmt='orgtbl'))
+    print(result)
 
 
 def view_receipts(cursor):
@@ -308,13 +309,14 @@ def modify_category(cursor, conn):
 
 
 def shop(cursor, conn):
-    try:
-        cursor.execute("call shop(%s)",
-                       (int(user_id)))
+    # try:
+    print(user_id)
+    cursor.execute("call shop(%s)",
+                   [int(user_id)])
 
-        conn.commit()
-    except Exception as e:
-        print(e)
+    conn.commit()
+    # except Exception as e:
+    #     print(e)
 
 
 def get_reports(cursor):
@@ -415,7 +417,8 @@ def best_customers_report(cursor):
 from (select costumer_id as cid, sum(total_price) as bought
 from "Reciept"
 group by costumer_id
-having sum(total_price)>0) as foo inner join "User" on cid = uid;''')
+having sum(total_price)>0) as foo inner join "User" on cid = uid
+order by bought desc;''')
     result = cursor.fetchall()
     print(tabulate(result, headers=[desc[0] for desc in cursor.description], tablefmt='orgtbl'))
 
